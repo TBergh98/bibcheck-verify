@@ -1,0 +1,34 @@
+.env
+.env.*
+!.env.example
+.venv/
+
+# Python environments and caches
+__pycache__/
+**/.venv/
+.pytest_cache/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+**/.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+**/*.egg-info/
+
+# Generated verifier data
+bibcheck-results/
+**/bibcheck-results/
+bibcheck-results*/
+**/bibcheck-results*/
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.vscode/settings.json
