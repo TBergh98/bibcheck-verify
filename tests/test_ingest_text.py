@@ -4,9 +4,9 @@ from bibcheck.ingest.text import parse_text
 
 
 def test_reference_fixture_does_not_collapse_to_a_handful_of_entries():
-	references = parse_text(Path("input_test/test.md"))
+	references = parse_text(Path("input_test/test44.md"))
 
-	assert len(references) == 44
+	assert len(references) == 46
 	bali = next(reference for reference in references if "10.3390/v13040535" in reference.raw_text)
 	marandino = next(reference for reference in references if "10.3390/v14102095" in reference.raw_text)
 	assert "Banyai, K." in bali.raw_text
