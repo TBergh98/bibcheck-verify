@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bibcheck-verify"
-version = "0.1.0"
+version = "0.1.1"
 description = "Deterministic bibliography verification for scientific papers"
 readme = "README.md"
 requires-python = ">=3.11"
