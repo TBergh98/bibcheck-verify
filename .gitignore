@@ -23,6 +23,10 @@ dist/
 **/*.egg-info/
 
 # Generated verifier data
+bibcheck-verify-results/
+**/bibcheck-verify-results/
+bibcheck-verify-results*/
+**/bibcheck-verify-results*/
 bibcheck-results/
 **/bibcheck-results/
 bibcheck-results*/

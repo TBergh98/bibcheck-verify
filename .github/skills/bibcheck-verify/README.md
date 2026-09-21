@@ -1,6 +1,6 @@
 # Skill `bibcheck-verify`
 
-This directory contains the integration for Hermes Agent, Claude Code, or compatible agents. The skill instructs the agent to extract metadata using the session model and invoke the Python `bibcheck` command.
+This directory contains the integration for Hermes Agent, Claude Code, or compatible agents. The skill instructs the agent to extract metadata using the session model and invoke the Python `bibcheck-verify` command.
 
 ## Installation
 

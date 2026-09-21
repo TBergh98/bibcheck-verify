@@ -19,7 +19,7 @@ class ApiClient:
     def get_json(self, url: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         if self.requests >= self.max_requests:
             raise RequestBudgetExceeded("maximum request budget exceeded")
-        headers = {"User-Agent": f"bibcheck/0.1.0 ({self.mailto})" if self.mailto else "bibcheck/0.1.0"}
+        headers = {"User-Agent": f"bibcheck-verify/0.1.0 ({self.mailto})" if self.mailto else "bibcheck-verify/0.1.0"}
         for attempt in range(4):
             self.requests += 1
             response = self.client.get(url, params=params, headers=headers)

@@ -20,16 +20,16 @@ load_dotenv()
 
 @app.command()
 def version() -> None:
-    typer.echo("bibcheck 0.1.0")
+    typer.echo("bibcheck-verify 0.1.0")
 
 
 @app.command("verify")
 def verify(input_file: Path, depth: int = typer.Option(0, min=0), sources: str = typer.Option("openalex,crossref"),
            confidence_threshold: float = typer.Option(0.85, min=0.0, max=1.0),
-           max_requests: int = typer.Option(2000, min=0), output_dir: Path = typer.Option(Path("./bibcheck-results")),
+           max_requests: int = typer.Option(2000, min=0), output_dir: Path = typer.Option(Path("./bibcheck-verify-results")),
            mailto: str | None = typer.Option(None),
-           llm_provider: str | None = typer.Option(None, envvar="BIBCHECK_LLM_PROVIDER"),
-           llm_model: str | None = typer.Option(None, envvar="BIBCHECK_LLM_MODEL"),
+           llm_provider: str | None = typer.Option(None, envvar="BIBCHECK_VERIFY_LLM_PROVIDER"),
+           llm_model: str | None = typer.Option(None, envvar="BIBCHECK_VERIFY_LLM_MODEL"),
            metadata_file: Path | None = typer.Option(None, help="JSON metadata produced by a skill or another extractor.")) -> None:
     if not input_file.is_file():
         raise typer.BadParameter(f"input file not found: {input_file}")

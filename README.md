@@ -1,6 +1,6 @@
 # bibcheck-verify
 
-`bibcheck` is a tool for an initial reproducible check of scientific bibliographies. It compares each reference with metadata indexed by Crossref and OpenAlex and produces a report that helps identify strong matches, possible matches, and references that require manual review.
+`bibcheck-verify` is a tool for an initial reproducible check of scientific bibliographies. It compares each reference with metadata indexed by Crossref and OpenAlex and produces a report that helps identify strong matches, possible matches, and references that require manual review.
 
 It does not determine on its own that a citation is fabricated. A reference may be correct but not indexed, or it may be written too incompletely to be recognized. The results are therefore a triage tool, not definitive proof.
 
@@ -8,7 +8,7 @@ It does not determine on its own that a citation is fabricated. A reference may 
 
 Real bibliographies often come from PDFs, copied text, or documents with missing DOIs and metadata. Checking them one entry at a time is slow; relying on a language model for the judgment, on the other hand, can introduce fabricated details.
 
-`bibcheck` separates these two problems: extracting incomplete metadata can be assisted by a model, while the existence and matching of a work are evaluated by querying external bibliographic sources and comparing the results. This makes both interactive verification with an agent and repeated processing of many bibliographies through scripts, caching, and request limits possible.
+`bibcheck-verify` separates these two problems: extracting incomplete metadata can be assisted by a model, while the existence and matching of a work are evaluated by querying external bibliographic sources and comparing the results. This makes both interactive verification with an agent and repeated processing of many bibliographies through scripts, caching, and request limits possible.
 
 ### Why this matters
 
@@ -18,16 +18,16 @@ The authors identified 4,046 fabricated references across 2,810 papers. The repo
 
 Their system compared claimed reference metadata with records from PubMed and Crossref, then used automated filters, an LLM review step, and additional checks against OpenAlex and Google Scholar. In a masked validation of 500 entries, the system had a reported precision of 91% (Fleiss’ κ = 0.71); the authors explicitly note that this estimates precision, not recall. The study also distinguishes fabricated references from reference errors, such as abbreviated titles that still correspond to a real publication.
 
-This is the problem `bibcheck` is intended to make easier to investigate at a smaller and inspectable scale: verify references against external records, preserve the queries and evidence, and send uncertain cases to human review. Its results should not be interpreted as a replication of the Lancet audit or as definitive proof that an unmatched reference is fabricated.
+This is the problem `bibcheck-verify` is intended to make easier to investigate at a smaller and inspectable scale: verify references against external records, preserve the queries and evidence, and send uncertain cases to human review. Its results should not be interpreted as a replication of the Lancet audit or as definitive proof that an unmatched reference is fabricated.
 
 ## Two ways to use the project
 
 The repository contains two related but distinct components:
 
-1. **The standalone Python package**: the `bibcheck` program can be used from a terminal, script, or pipeline to check many bibliographies. It can also use an LLM provider through an API key as a fallback for extracting missing metadata.
-2. **The `bibcheck` skill**: instructions for Hermes Agent, Claude Code, or compatible agents. The agent uses the session model to extract metadata, without a separate LLM API key, and then delegates verification to the Python `bibcheck` command.
+1. **The standalone Python package**: the `bibcheck-verify` program can be used from a terminal, script, or pipeline to check many bibliographies. It can also use an LLM provider through an API key as a fallback for extracting missing metadata.
+2. **The `bibcheck-verify` skill**: instructions for Hermes Agent, Claude Code, or compatible agents. The agent uses the session model to extract metadata, without a separate LLM API key, and then delegates verification to the Python `bibcheck-verify` command.
 
-The skill does not contain a copy of the program. To use it, first install the Python package and then copy the `.github/skills/bibcheck/` directory to the agent’s local skills directory.
+The skill does not contain a copy of the program. To use it, first install the Python package and then copy the `.github/skills/bibcheck-verify/` directory to the agent’s local skills directory.
 
 ## Package installation
 
@@ -53,7 +53,7 @@ uv tool install --force .
 Alternatively, to use the project without installing it globally:
 
 ```powershell
-uv run bibcheck verify references.bib
+uv run bibcheck-verify verify references.bib
 ```
 
 ### From PyPI
@@ -67,7 +67,7 @@ uv tool install bibcheck-verify
 For a single temporary run:
 
 ```powershell
-uvx bibcheck verify references.bib
+uvx bibcheck-verify verify references.bib
 ```
 
 PyPI distributes the code and dependencies. It does not automatically receive the user’s bibliographies, reports, or API keys.
@@ -77,9 +77,9 @@ PyPI distributes the code and dependencies. It does not automatically receive th
 The command accepts BibTeX, PDF, Markdown, and plain text:
 
 ```powershell
-bibcheck verify references.bib
-bibcheck verify article.pdf
-bibcheck verify references.md --output-dir risultati
+bibcheck-verify verify references.bib
+bibcheck-verify verify article.pdf
+bibcheck-verify verify references.md --output-dir risultati
 ```
 
 The format is recognized from the extension:
@@ -93,14 +93,14 @@ For text and Markdown, the parser looks for a `References`, `Bibliography`, or `
 To see all options:
 
 ```powershell
-bibcheck --help
-bibcheck verify --help
+bibcheck-verify --help
+bibcheck-verify verify --help
 ```
 
 Example with the main options:
 
 ```powershell
-bibcheck verify references.bib `
+bibcheck-verify verify references.bib `
   --depth 1 `
   --sources openalex,crossref `
   --confidence-threshold 0.85 `
@@ -113,15 +113,15 @@ bibcheck verify references.bib `
 
 ## Usage with a skill
 
-The skill is located in [.github/skills/bibcheck](.github/skills/bibcheck). To install it:
+The skill is located in [.github/skills/bibcheck-verify](.github/skills/bibcheck-verify). To install it:
 
-1. install the `bibcheck` command, from the repository with `uv tool install .` or from PyPI with `uv tool install bibcheck-verify` once it is available;
-2. copy the entire `.github/skills/bibcheck/` directory to the skills directory supported by your Hermes Agent or Claude Code installation;
+1. install the `bibcheck-verify` command, from the repository with `uv tool install .` or from PyPI with `uv tool install bibcheck-verify` once it is available;
+2. copy the entire `.github/skills/bibcheck-verify/` directory to the skills directory supported by your Hermes Agent or Claude Code installation;
 3. ask the agent to verify a PDF, Markdown, text, or BibTeX file.
 
-The session model reads the bibliography and creates a temporary file with the title, authors, year, DOI, journal, and search query. The `bibcheck` command reads the original file, applies that metadata, and queries Crossref and OpenAlex. The model proposes metadata; it does not decide whether a publication exists.
+The session model reads the bibliography and creates a temporary file with the title, authors, year, DOI, journal, and search query. The `bibcheck-verify` command reads the original file, applies that metadata, and queries Crossref and OpenAlex. The model proposes metadata; it does not decide whether a publication exists.
 
-This mode does not require `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY`. It does require network access to the bibliographic sources, and the `bibcheck` command must be available in the agent’s PATH.
+This mode does not require `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY`. It does require network access to the bibliographic sources, and the `bibcheck-verify` command must be available in the agent’s PATH.
 
 ## API keys and LLM fallback
 
@@ -129,14 +129,14 @@ Standalone usage can ask the program to extract incomplete metadata through an L
 
 ```powershell
 $env:OPENAI_API_KEY = "..."
-bibcheck verify references.md --llm-provider openai
+bibcheck-verify verify references.md --llm-provider openai
 ```
 
 The `openai`, `anthropic`, and `gemini` providers are supported. Keys must remain in environment variables or a local `.env` file, never in the repository, reports, or metadata JSON file.
 
 ## Results
 
-The output directory contains:
+The output directory `bibcheck-verify-results` contains:
 
 - `summary.md`: readable report for manual review;
 - `graph.json`: complete details, queries, sources, nodes, edges, and confidence;
@@ -155,14 +155,14 @@ The main statuses are:
 
 ```text
 bibcheck-verify/
-├── src/bibcheck/                 # Python package and CLI command
-│   ├── cli.py                    # `bibcheck` commands and options
+├── src/bibcheck/                 # Internal Python module for the bibcheck-verify command
+│   ├── cli.py                    # `bibcheck-verify` commands and options
 │   ├── ingest/                   # BibTeX, PDF, and text parsers
 │   ├── resolve/                  # Crossref, OpenAlex, fuzzy matching, and optional LLM
 │   ├── graph/                    # citation graph cache and traversal
 │   └── report/                   # Markdown and JSON output
 ├── tests/                        # automated package tests
-├── .github/skills/bibcheck/      # skill for compatible agents
+├── .github/skills/bibcheck-verify/ # skill for compatible agents
 │   ├── SKILL.md                  # agent operating instructions
 │   └── README.md                 # manual skill installation
 ├── pyproject.toml                # metadata, dependencies, and console command
@@ -171,7 +171,7 @@ bibcheck-verify/
 └── README.md                     # this guide
 ```
 
-The `bibcheck-results*` directories are results from local runs and are not part of the distributed package.
+The `bibcheck-verify-results*` directories are results from local runs and are not part of the distributed package.
 
 ## Development and testing
 
@@ -200,7 +200,7 @@ Publishing is optional and is not required to use the project locally. In summar
 4. upload to TestPyPI first;
 5. upload to PyPI using the token, without saving it in versioned files.
 
-The `bibcheck-verify` distribution name must be available on PyPI. The installed package provides the `bibcheck` command. The actual upload requires the owner’s credentials and is not performed by this repository.
+The `bibcheck-verify` distribution name must be available on PyPI. The installed package provides the `bibcheck-verify` command. The actual upload requires the owner’s credentials and is not performed by this repository.
 
 ## Limitations
 

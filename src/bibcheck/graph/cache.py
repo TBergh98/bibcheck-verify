@@ -6,7 +6,7 @@ from bibcheck.resolve.base import Lookup, Reference, Resolution, VerificationSta
 
 
 class Cache:
-    def __init__(self, path: str = "bibcheck.sqlite3"):
+    def __init__(self, path: str = "bibcheck-verify.sqlite3"):
         self.db = sqlite3.connect(path)
         self.db.execute("CREATE TABLE IF NOT EXISTS lookups (key TEXT PRIMARY KEY, payload TEXT NOT NULL)")
         self.db.commit()

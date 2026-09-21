@@ -55,7 +55,7 @@ There must be exactly one item per input citation, with sequential zero-based ID
 6. Run the verifier against the original bibliography. Pass the metadata JSON only via `--metadata-file`:
 
 ```powershell
-bibcheck-verify verify "C:\Temp\references.txt" --metadata-file "C:\Temp\bibcheck_metadata.json"
+bibcheck-verify verify "C:\Temp\references.txt" --metadata-file "C:\Temp\bibcheck-verify_metadata.json"
 ```
 
 Never use the metadata JSON as the positional input file. The verifier parses the original file to determine the number and order of references.

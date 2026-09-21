@@ -21,7 +21,7 @@ dependencies = [
 test = ["pytest>=8,<9"]
 
 [project.scripts]
-bibcheck = "bibcheck.cli:app"
+bibcheck-verify = "bibcheck.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bibcheck"]
