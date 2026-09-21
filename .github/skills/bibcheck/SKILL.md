@@ -14,7 +14,7 @@ The model extraction is a hypothesis. Crossref, OpenAlex and the local fuzzy mat
 The user must have the `bibcheck` command installed and available to the agent:
 
 ```powershell
-uv tool install bibcheck
+uv tool install bibcheck-verify
 ```
 
 Before the package is published, the user can install it from a local clone of the repository with `uv tool install <repository-directory>`.

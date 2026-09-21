@@ -9,7 +9,7 @@ The skill and the Python package are separate components.
 1. Install `bibcheck`:
 
    ```powershell
-   uv tool install bibcheck
+   uv tool install bibcheck-verify
    ```
 
    Before publishing to PyPI, use `uv tool install <repository-path>`.

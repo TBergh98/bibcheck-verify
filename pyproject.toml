@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "bibcheck"
+name = "bibcheck-verify"
 version = "0.1.0"
 description = "Deterministic bibliography verification for scientific papers"
 readme = "README.md"

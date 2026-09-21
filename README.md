@@ -61,7 +61,7 @@ uv run bibcheck verify references.bib
 Once the package is published, installation will not require downloading the repository:
 
 ```powershell
-uv tool install bibcheck
+uv tool install bibcheck-verify
 ```
 
 For a single temporary run:
@@ -115,7 +115,7 @@ bibcheck verify references.bib `
 
 The skill is located in [.github/skills/bibcheck](.github/skills/bibcheck). To install it:
 
-1. install the `bibcheck` command, from the repository with `uv tool install .` or from PyPI with `uv tool install bibcheck` once it is available;
+1. install the `bibcheck` command, from the repository with `uv tool install .` or from PyPI with `uv tool install bibcheck-verify` once it is available;
 2. copy the entire `.github/skills/bibcheck/` directory to the skills directory supported by your Hermes Agent or Claude Code installation;
 3. ask the agent to verify a PDF, Markdown, text, or BibTeX file.
 
@@ -154,7 +154,7 @@ The main statuses are:
 ## Project structure
 
 ```text
-bibcheck/
+bibcheck-verify/
 ├── src/bibcheck/                 # Python package and CLI command
 │   ├── cli.py                    # `bibcheck` commands and options
 │   ├── ingest/                   # BibTeX, PDF, and text parsers

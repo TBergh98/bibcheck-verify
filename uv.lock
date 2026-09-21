@@ -25,7 +25,7 @@ wheels = [
 ]
 
 [[package]]
-name = "bibcheck"
+name = "bibcheck-verify"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
