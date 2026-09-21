@@ -1,200 +1,201 @@
-Quando configurato, puo usare un modello linguistico soltanto come fallback per estrarre metadati da citazioni incomplete. Il modello non decide se una citazione esiste: la verifica resta affidata a Crossref, OpenAlex e al confronto fuzzy locale.
 # bibcheck
 
-`bibcheck` controlla i riferimenti bibliografici di un articolo confrontandoli con i metadati disponibili in Crossref e OpenAlex.
+`bibcheck` è uno strumento per una prima verifica riproducibile di bibliografie scientifiche. Confronta ogni riferimento con i metadati indicizzati da Crossref e OpenAlex e produce un report che aiuta a individuare corrispondenze solide, possibili corrispondenze e riferimenti da controllare manualmente.
 
-## Skill per Hermes e Claude Code
+Non stabilisce da solo che una citazione sia inventata. Un riferimento può essere corretto ma non indicizzato, oppure può essere scritto in modo troppo incompleto per essere riconosciuto. I risultati sono quindi uno strumento di triage, non una prova definitiva.
 
-La skill distribuibile si trova in [.github/skills/bibcheck-verify](.github/skills/bibcheck-verify).
-Le istruzioni per installarla in Hermes Agent o Claude Code, i requisiti e i limiti per
-utenti non tecnici sono nel [README della skill](.github/skills/bibcheck-verify/README.md).
+## Perché esiste
 
-La skill richiede Python 3.11+ e `uv` sulla macchina che esegue l'agente. Dopo la prima
-installazione, l'utente può fornire una bibliografia all'agente e chiedere la verifica;
-il risultato deve comunque essere sottoposto a revisione umana.
+Le bibliografie reali spesso arrivano da PDF, testo copiato o documenti con DOI e metadati mancanti. Controllarle una voce alla volta è lento; affidare il giudizio a un modello linguistico, invece, può introdurre dettagli inventati.
 
-L'obiettivo e fornire un controllo riproducibile e ispezionabile: per ogni riferimento vengono conservati la fonte interrogata, la query usata, l'eventuale opera trovata e un livello di confidenza. Il programma non usa modelli linguistici per decidere se una citazione esiste.
+`bibcheck` separa i due problemi: l’estrazione di metadati incompleti può essere aiutata da un modello, mentre l’esistenza e la corrispondenza di un’opera vengono valutate interrogando fonti bibliografiche esterne e confrontando i risultati. Questo rende possibile sia una verifica interattiva con un agente sia l’elaborazione ripetuta di molte bibliografie tramite script, cache e limiti di richieste.
 
-## Quando usarlo
+## Due modi di usare il progetto
 
-`bibcheck` e utile per una prima verifica di una bibliografia prima di una revisione manuale, soprattutto per individuare:
+La repository contiene due componenti collegate ma distinte:
 
-- DOI o metadati che corrispondono esattamente a un'opera indicizzata;
-- riferimenti che sembrano corrispondere a un'opera, ma richiedono un confronto fuzzy;
-- riferimenti senza metadati sufficienti o non trovati nelle fonti consultate.
+1. **Il pacchetto Python standalone**: il programma `bibcheck` può essere usato da terminale, da script o da pipeline per controllare molte bibliografie. Può usare anche un provider LLM tramite API key come fallback per estrarre metadati mancanti.
+2. **La skill `bibcheck`**: istruzioni per Hermes Agent, Claude Code o agenti compatibili. L’agente usa il modello della sessione per estrarre i metadati, senza una API key LLM separata, poi delega la verifica al comando Python `bibcheck`.
 
-Il risultato non sostituisce il controllo umano. Un riferimento puo essere corretto ma non essere indicizzato, oppure puo avere metadati troppo incompleti per essere confrontato in modo affidabile.
+La skill non contiene una copia del programma. Per usarla bisogna installare prima il pacchetto Python e poi copiare la directory `.github/skills/bibcheck/` nella directory locale delle skill dell’agente.
 
-## Requisiti e installazione
+## Installazione del pacchetto
 
-Sono necessari Python 3.11 o una versione successiva e [uv](https://docs.astral.sh/uv/).
+Requisiti:
 
-Per installare il progetto e le dipendenze di test:
+- Python 3.11 o successivo;
+- [`uv`](https://docs.astral.sh/uv/).
 
-```bash
-uv sync --extra test
+### Dal repository
+
+Questa è la modalità utile durante lo sviluppo o prima della pubblicazione su PyPI:
+
+```powershell
+uv tool install .
 ```
 
-L'installazione registra il comando `bibcheck` nell'ambiente del progetto. In alternativa, tutti gli esempi possono essere eseguiti con `uv run bibcheck`.
+Per aggiornare l’installazione dopo una modifica locale:
 
-## Uso rapido
-
-Per verificare una bibliografia BibTeX:
-
-```bash
-uv run bibcheck verify paper.bib
+```powershell
+uv tool install --force .
 ```
 
-Al termine, il programma crea `./bibcheck-results/` con un riepilogo Markdown e il grafo completo in JSON.
+In alternativa, per usare il progetto senza installarlo globalmente:
 
-Un esempio con le opzioni piu comuni:
-
-```bash
-uv run bibcheck verify paper.bib \
-	--depth 2 \
-	--sources openalex,crossref \
-	--confidence-threshold 0.85 \
-	--max-requests 2000 \
-	--output-dir ./risultati-bibcheck \
-	--mailto nome@example.org
+```powershell
+uv run bibcheck verify references.bib
 ```
 
-Per vedere tutti i comandi e i valori predefiniti:
+### Da PyPI
 
-```bash
-uv run bibcheck --help
-uv run bibcheck verify --help
+Quando il pacchetto sarà pubblicato, l’installazione non richiederà il download del repository:
+
+```powershell
+uv tool install bibcheck
 ```
 
-## Formati di input
+Per una singola esecuzione temporanea:
 
-Il comando `verify` accetta un percorso file. Il formato viene scelto dall'estensione:
+```powershell
+uvx bibcheck verify references.bib
+```
 
-- `.bib`: BibTeX. Vengono letti titolo, autori, anno, DOI, rivista o atti di conferenza;
-- `.pdf`: il testo viene estratto con PyMuPDF e analizzato come testo libero;
-- qualsiasi altra estensione: il file viene trattato come testo semplice o Markdown.
+PyPI distribuisce il codice e le dipendenze. Non riceve automaticamente bibliografie, report o API key dell’utente.
 
-Per file di testo e Markdown, il parser cerca una sezione chiamata `References`, `Bibliography` o `Bibliografia`. Se non la trova, prova a interpretare il contenuto intero come bibliografia. Le voci numerate, le righe separate e i riferimenti con titolo tra virgolette sono i casi meglio supportati.
+## Uso standalone
 
-Il parsing PDF e volutamente best effort: impaginazione a colonne, note, intestazioni e testo estratto in ordine inatteso possono produrre riferimenti incompleti. Per risultati piu prevedibili, quando possibile e preferibile fornire il file `.bib` originale.
+Il comando accetta BibTeX, PDF, Markdown e testo semplice:
 
-## Come funziona la verifica
+```powershell
+bibcheck verify references.bib
+bibcheck verify article.pdf
+bibcheck verify references.md --output-dir risultati
+```
 
-Per ogni riferimento, `bibcheck` segue questa sequenza:
+Il formato viene riconosciuto dall’estensione:
 
-1. estrae i metadati disponibili dal file;
-2. se e presente un DOI e Crossref e selezionato, prova prima una ricerca esatta per DOI;
-3. altrimenti interroga le fonti selezionate e confronta i metadati della corrispondenza trovata;
-4. salva l'esito, la confidence e i dettagli delle ricerche;
-5. se la corrispondenza e verificata e `--depth` e maggiore di zero, puo seguire anche le opere citate da quella pubblicazione.
+- `.bib`: vengono estratti titolo, autori, anno, DOI, rivista o atti;
+- `.pdf`: il testo viene estratto con PyMuPDF;
+- altre estensioni: il file viene trattato come testo o Markdown.
 
-La profondita predefinita e `0`, quindi controlla soltanto i riferimenti presenti nel file di input. Con `--depth 1` vengono analizzati anche i riferimenti citati dalle opere verificate; valori piu alti estendono ulteriormente il grafo.
+Per testo e Markdown il parser cerca una sezione `References`, `Bibliography` o `Bibliografia`. Se non la trova, prova a interpretare l’intero file come bibliografia. Il parsing PDF è best effort; quando possibile, un file BibTeX produce risultati più prevedibili.
 
-## Opzioni principali
+Per vedere tutte le opzioni:
 
-| Opzione | Predefinito | Descrizione |
-| --- | --- | --- |
-| `--depth` | `0` | Profondita del grafo delle citazioni da esplorare. Deve essere almeno `0`. |
-| `--sources` | `openalex,crossref` | Fonti da interrogare, separate da virgola. Sono supportate `openalex` e `crossref`. |
-| `--confidence-threshold` | `0.85` | Soglia tra `0` e `1` per accettare una corrispondenza fuzzy. |
-| `--max-requests` | `2000` | Numero massimo di richieste HTTP. Il risultato puo essere parziale se il limite viene raggiunto. |
-| `--output-dir` | `./bibcheck-results` | Directory in cui scrivere risultati e cache. |
-| `--mailto` | nessuno | Indirizzo incluso nello User-Agent delle richieste HTTP. |
-| `--llm-provider` | nessuno | Abilita il fallback LLM (`openai`, `anthropic` o `gemini`). Richiede la relativa API key. |
-| `--llm-model` | predefinito del provider | Modello da usare per l'estrazione batch. |
-| `--metadata-file` | nessuno | JSON con metadati prodotti da una skill o da un estrattore esterno. Alternativo a `--llm-provider`. |
+```powershell
+bibcheck --help
+bibcheck verify --help
+```
 
-### Fallback LLM
+Esempio con le opzioni principali:
 
-Il fallback viene eseguito solo per riferimenti privi di DOI e con titolo, autori o anno mancanti. Le citazioni vengono inviate in batch e il risultato deve contenere una voce per ogni citazione. I valori gia estratti in modo deterministico non vengono sovrascritti.
+```powershell
+bibcheck verify references.bib `
+  --depth 1 `
+  --sources openalex,crossref `
+  --confidence-threshold 0.85 `
+  --max-requests 2000 `
+  --output-dir risultati `
+  --mailto nome@example.org
+```
 
-Le API key vanno fornite tramite variabili d'ambiente:
+`--depth 0` controlla solo i riferimenti forniti. Con valori maggiori può seguire le opere citate dalle pubblicazioni verificate e costruire un grafo più ampio.
+
+## Uso con una skill
+
+La skill si trova in [.github/skills/bibcheck](.github/skills/bibcheck). Per installarla:
+
+1. installa il comando `bibcheck`, dal repository con `uv tool install .` oppure da PyPI con `uv tool install bibcheck` quando sarà disponibile;
+2. copia l’intera directory `.github/skills/bibcheck/` nella directory delle skill supportata dalla tua installazione di Hermes Agent o Claude Code;
+3. chiedi all’agente di verificare un file PDF, Markdown, testo o BibTeX.
+
+Il modello della sessione legge la bibliografia e crea un file temporaneo con titolo, autori, anno, DOI, rivista e query di ricerca. Il comando `bibcheck` legge il file originale, applica quei metadati e interroga Crossref e OpenAlex. Il modello propone metadati: non decide se una pubblicazione esiste.
+
+Questa modalità non richiede `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` o `GEMINI_API_KEY`. Serve invece accesso alla rete per le fonti bibliografiche e il comando `bibcheck` deve essere disponibile nel PATH dell’agente.
+
+## API key e fallback LLM
+
+L’uso standalone può chiedere al programma di estrarre metadati incompleti tramite un provider LLM. È un fallback opzionale e non sostituisce la verifica su Crossref/OpenAlex.
 
 ```powershell
 $env:OPENAI_API_KEY = "..."
-uv run bibcheck verify input_test/test_poultry.md --llm-provider openai
+bibcheck verify references.md --llm-provider openai
 ```
 
-Sono supportati `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` e `GEMINI_API_KEY`. Il testo delle citazioni viene inviato al provider scelto; non inserire le chiavi in file di progetto, cache o report.
-
-Per una configurazione locale persistente, copia `.env.example` in `.env` e compila soltanto la chiave del provider scelto. `.env` e escluso da Git e viene caricato automaticamente da `bibcheck`:
-
-```powershell
-Copy-Item .env.example .env
-notepad .env
-uv run bibcheck verify input_test/test_poultry.md
-```
-
-Non creare `.env` nel repository condiviso e non incollare mai la chiave nei comandi salvati nella shell o nei file di configurazione versionati.
-
-### Uso da skill
-
-Una skill puo usare direttamente il modello della sessione per creare un file JSON, senza API key del provider LLM, e poi delegare la verifica a `bibcheck`:
-
-```json
-{
-	"items": [
-		{
-			"reference_id": "0",
-			"title": "A Paper",
-			"authors": ["Jane Doe"],
-			"year": 2020,
-			"doi": null,
-			"venue": "Journal",
-			"queries": ["A Paper Jane Doe 2020"]
-		}
-	]
-}
-```
-
-Il campo `reference_id` deve essere l'indice zero-based della reference nel file di input e deve esserci esattamente una voce per ogni reference. La skill esegue quindi:
-
-```powershell
-uv run bibcheck verify paper.md --metadata-file metadata.json
-```
-
-In questa modalita l'LLM della skill estrae i metadati, mentre `bibcheck` continua a usare Crossref/OpenAlex per la verifica.
-
-Per limitare la verifica a una sola fonte, ad esempio:
-
-```bash
-uv run bibcheck verify paper.bib --sources crossref
-```
+Sono supportati i provider `openai`, `anthropic` e `gemini`. Le chiavi devono restare in variabili d’ambiente o in un file `.env` locale, mai nel repository, nei report o nel file JSON dei metadati.
 
 ## Risultati
 
 La directory di output contiene:
 
-- `summary.md`: riepilogo leggibile con numero di richieste, eventuale risultato parziale e conteggi per profondita e stato;
-- `graph.json`: dati completi della verifica, inclusi nodi, archi, riferimenti, confidence, opere trovate e query inviate alle fonti;
-- `cache.sqlite3`: cache locale delle risoluzioni, riutilizzabile nelle esecuzioni successive con la stessa directory.
+- `summary.md`: report leggibile per la revisione manuale;
+- `graph.json`: dettagli completi, query, fonti, nodi, archi e confidence;
+- `cache.sqlite3`: cache locale delle risoluzioni.
 
-Gli stati piu importanti sono:
+Gli stati principali sono:
 
-- `verified`: corrispondenza verificata, incluso il caso di DOI esatto;
-- `verified_fuzzy`: corrispondenza accettata sulla base della similarita dei metadati;
-- `low_confidence`: esiste una possibile corrispondenza, ma non supera la soglia o i dati di input sono insufficienti;
-- `suspected_hallucination`: nessuna corrispondenza e stata trovata nelle fonti consultate.
+- `verified`: corrispondenza verificata, anche tramite DOI esatto;
+- `verified_fuzzy`: corrispondenza accettata dal confronto fuzzy;
+- `low_confidence`: possibile corrispondenza non abbastanza solida;
+- `suspected_hallucination`: nessuna corrispondenza trovata nelle fonti consultate.
 
-`suspected_hallucination` e un'etichetta di triage, non una prova che il riferimento sia inventato. Va sempre verificata manualmente, insieme alle query registrate in `graph.json`.
+`suspected_hallucination` è un’etichetta di triage, non la prova che il riferimento sia inventato. Tutti i casi dubbi richiedono controllo umano.
 
-`summary.md` e il report principale per la revisione manuale. Include il numero delle reference originali, quante sono state controllate e quante hanno una possibile opera corrispondente, con percentuali esplicite. Mostra inoltre i conteggi per profondita e stato, una spiegazione della confidence e una tabella dettagliata per ogni riferimento con titolo, autori, anno, opera candidata, fonte, DOI o URL quando disponibili e azione consigliata.
+## Struttura del progetto
 
-Le percentuali riferite alla bibliografia originale usano come denominatore il numero di reference fornite in input. Le percentuali delle sezioni per profondita usano invece i nodi controllati nel grafo: questi possono essere deduplicati oppure includere opere scoperte a `depth` maggiore di zero. Se il limite di richieste viene raggiunto, il report segnala che il risultato e parziale e le reference non elencate non devono essere interpretate come verificate o inesistenti.
+```text
+bibcheck/
+├── src/bibcheck/                 # pacchetto Python e comando CLI
+│   ├── cli.py                    # comandi `bibcheck` e opzioni
+│   ├── ingest/                   # parser BibTeX, PDF e testo
+│   ├── resolve/                  # Crossref, OpenAlex, fuzzy match e LLM opzionale
+│   ├── graph/                    # cache e attraversamento del grafo citazionale
+│   └── report/                   # output Markdown e JSON
+├── tests/                        # test automatici del pacchetto
+├── .github/skills/bibcheck/      # skill per agenti compatibili
+│   ├── SKILL.md                  # istruzioni operative dell’agente
+│   └── README.md                 # installazione manuale della skill
+├── pyproject.toml                # metadati, dipendenze e comando console
+├── uv.lock                       # versioni bloccate delle dipendenze
+├── .env.example                  # esempio di configurazione LLM locale
+└── README.md                     # questa guida
+```
 
-## Limiti e comportamento in caso di errore
-
-- La verifica richiede accesso alla rete e dipende dalla disponibilita e dalla qualita dei metadati di Crossref e OpenAlex.
-- Un riferimento senza titolo, autori o anno viene trattato con bassa confidenza.
-- Il limite `--max-requests` include le richieste ripetute dopo una risposta HTTP `429`. Se viene superato, `summary.md` e `graph.json` vengono comunque scritti, ma il campo `partial` in `graph.json` sara `true`.
-- Le chiamate vengono memorizzate nella cache della directory di output. Per una nuova verifica pulita, usa una directory diversa o rimuovi la cache dopo aver salvato i risultati che ti servono.
+Le directory `bibcheck-results*` sono risultati di esecuzioni locali e non fanno parte del pacchetto distribuito.
 
 ## Sviluppo e test
 
-Per eseguire la suite di test:
+Per preparare l’ambiente del repository:
 
-```bash
-uv run pytest
+```powershell
+uv sync --extra test
+uv run python -m pytest
 ```
 
-Il codice sorgente si trova in `src/bibcheck/`; i test corrispondenti sono in `tests/`.
+Il pacchetto distribuibile si costruisce con:
+
+```powershell
+uv build
+```
+
+Gli artefatti vengono creati in `dist/`. Prima di pubblicare su PyPI è opportuno controllare il contenuto del wheel e provarlo in un ambiente pulito o su TestPyPI.
+
+## Pubblicazione su PyPI
+
+La pubblicazione è facoltativa e non è necessaria per usare il progetto localmente. In sintesi:
+
+1. creare un account su PyPI e, preferibilmente, un token limitato al progetto;
+2. eseguire `uv build`;
+3. controllare gli artefatti in `dist/`;
+4. caricare prima su TestPyPI;
+5. caricare su PyPI usando il token, senza salvarlo nei file versionati.
+
+Il nome di distribuzione `bibcheck` deve essere disponibile su PyPI. L’upload reale richiede le credenziali del proprietario e non viene eseguito da questo repository.
+
+## Limiti
+
+- la verifica richiede accesso alla rete;
+- Crossref e OpenAlex possono avere dati incompleti o diversi tra loro;
+- il limite di richieste può produrre un risultato parziale;
+- la cache può riutilizzare risoluzioni precedenti;
+- nessun risultato sostituisce la revisione della bibliografia originale.
