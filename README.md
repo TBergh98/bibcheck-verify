@@ -1,4 +1,4 @@
-# bibcheck
+# bibcheck-verify
 
 `bibcheck` is a tool for an initial reproducible check of scientific bibliographies. It compares each reference with metadata indexed by Crossref and OpenAlex and produces a report that helps identify strong matches, possible matches, and references that require manual review.
 
