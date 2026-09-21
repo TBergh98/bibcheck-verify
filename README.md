@@ -200,7 +200,7 @@ Publishing is optional and is not required to use the project locally. In summar
 4. upload to TestPyPI first;
 5. upload to PyPI using the token, without saving it in versioned files.
 
-The `bibcheck` distribution name must be available on PyPI. The actual upload requires the owner’s credentials and is not performed by this repository.
+The `bibcheck-verify` distribution name must be available on PyPI. The installed package provides the `bibcheck` command. The actual upload requires the owner’s credentials and is not performed by this repository.
 
 ## Limitations
 

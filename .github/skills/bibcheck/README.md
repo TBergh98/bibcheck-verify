@@ -6,7 +6,7 @@ This directory contains the integration for Hermes Agent, Claude Code, or compat
 
 The skill and the Python package are separate components.
 
-1. Install `bibcheck`:
+1. Install the `bibcheck-verify` package:
 
    ```powershell
    uv tool install bibcheck-verify
