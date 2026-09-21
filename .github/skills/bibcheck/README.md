@@ -1,27 +1,27 @@
 # Skill `bibcheck`
 
-Questa directory contiene l'integrazione per Hermes Agent, Claude Code o agenti compatibili. La skill istruisce l'agente a estrarre i metadati con il modello della sessione e a invocare il comando Python `bibcheck`.
+This directory contains the integration for Hermes Agent, Claude Code, or compatible agents. The skill instructs the agent to extract metadata using the session model and invoke the Python `bibcheck` command.
 
-## Installazione
+## Installation
 
-La skill e il pacchetto Python sono componenti separati.
+The skill and the Python package are separate components.
 
-1. Installa `bibcheck`:
+1. Install `bibcheck`:
 
    ```powershell
    uv tool install bibcheck
    ```
 
-   Prima della pubblicazione su PyPI, usa `uv tool install <percorso-del-repository>`.
+   Before publishing to PyPI, use `uv tool install <repository-path>`.
 
-2. Copia l'intera directory `bibcheck` nella directory delle skill prevista dalla tua installazione di Hermes o Claude Code. La directory copiata deve contenere `SKILL.md`.
+2. Copy the entire `bibcheck` directory to the skills directory expected by your Hermes or Claude Code installation. The copied directory must contain `SKILL.md`.
 
-3. Chiedi all'agente di verificare un PDF, Markdown, testo o BibTeX.
+3. Ask the agent to verify a PDF, Markdown, text, or BibTeX file.
 
-Non copiare questa directory aspettandoti che contenga anche l'eseguibile: il comando `bibcheck` deve essere già installato e disponibile nel PATH dell'agente.
+Do not copy this directory expecting it to also contain the executable: the `bibcheck` command must already be installed and available in the agent's PATH.
 
 ## API key
 
-La modalità della skill non richiede una API key per un provider LLM. Il modello della sessione estrae i metadati; `bibcheck` interroga Crossref e OpenAlex.
+The skill mode does not require an API key for an LLM provider. The session model extracts the metadata; `bibcheck` queries Crossref and OpenAlex.
 
-Le API key sono necessarie solo se si usa direttamente il fallback LLM del comando standalone con `--llm-provider`.
+API keys are required only when directly using the standalone command's LLM fallback with `--llm-provider`.
