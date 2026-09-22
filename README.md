@@ -44,6 +44,18 @@ This is the recommended option for normal use. It installs the published package
 uv tool install bibcheck-verify
 ```
 
+To update all tools installed with `uv tool install` to the latest versions available on PyPI, from anywhere:
+
+```powershell
+uv tool upgrade --all
+```
+
+To update only `bibcheck-verify`:
+
+```powershell
+uv tool upgrade bibcheck-verify
+```
+
 For a single temporary run:
 
 ```powershell
