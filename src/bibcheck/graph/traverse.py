@@ -33,15 +33,13 @@ class Graph:
     input_references: int = 0
 
 
-def verify_references(references: list[Reference], depth: int, sources: list[str], threshold: float,
+def verify_references(references: list[Reference], sources: list[str], threshold: float,
                       cache: Cache, openalex: OpenAlexResolver, crossref: CrossrefResolver,
                       extractor: MetadataExtractor | None = None) -> Graph:
     graph = Graph(input_references=len(references))
     _extract_missing_metadata(references, extractor)
-    queue = [(reference, 0, "root") for reference in references]
     seen: set[str] = set()
-    while queue:
-        reference, level, parent = queue.pop(0)
+    for reference in references:
         key = reference.key or reference.raw_text.strip().lower()
         if not key or key in seen:
             continue
@@ -58,14 +56,8 @@ def verify_references(references: list[Reference], depth: int, sources: list[str
             graph.partial = True
             break
         cache.put(key, resolution)
-        node_id = f"{level}:{len(graph.nodes)}"
-        graph.nodes.append(Node(node_id, level, reference, resolution))
-        if parent != "root":
-            graph.edges.append(Edge(parent, node_id))
-        if level >= depth or resolution.status not in (VerificationStatus.VERIFIED, VerificationStatus.VERIFIED_FUZZY) or not resolution.work:
-            continue
-        for cited in _children(resolution.work):
-            queue.append((cited, level + 1, node_id))
+        node_id = f"0:{len(graph.nodes)}"
+        graph.nodes.append(Node(node_id, 0, reference, resolution))
     graph.requests = openalex.client.requests + crossref.client.requests
     return graph
 
@@ -107,9 +99,6 @@ def _extract_missing_metadata(references: list[Reference], extractor: MetadataEx
     for reference, suggestion in zip(references, suggestions):
         apply_suggestion(reference, suggestion)
 
-
-def _children(work: Work) -> list[Reference]:
-    return [Reference(raw_text=identifier, title=identifier, authors=["openalex"], year=work.year) for identifier in work.referenced_works]
 
 
 def graph_to_dict(graph: Graph) -> dict:

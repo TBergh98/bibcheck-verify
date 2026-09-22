@@ -58,7 +58,7 @@ def _download_directory() -> Path:
 
 
 @app.command("verify")
-def verify(input_file: Path, depth: int = typer.Option(0, min=0), sources: str = typer.Option("openalex,crossref"),
+def verify(input_file: Path, sources: str = typer.Option("openalex,crossref"),
            confidence_threshold: float = typer.Option(0.85, min=0.0, max=1.0),
            max_requests: int = typer.Option(2000, min=0), output_dir: Path = typer.Option(Path("./bibcheck-verify-results")),
            mailto: str | None = typer.Option(None),
@@ -87,7 +87,7 @@ def verify(input_file: Path, depth: int = typer.Option(0, min=0), sources: str =
         for reference, suggestion in zip(references, suggestions):
             apply_suggestion(reference, suggestion, source="skill")
     extractor = _llm_extractor(llm_provider, llm_model)
-    graph = verify_references(references, depth, selected, confidence_threshold, cache,
+    graph = verify_references(references, selected, confidence_threshold, cache,
                               OpenAlexResolver(client), CrossrefResolver(client), extractor)
     write_json(graph, output_dir / "graph.json")
     write_summary(graph, output_dir / "summary.md")

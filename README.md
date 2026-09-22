@@ -96,15 +96,12 @@ Example with the main options:
 ```powershell
 bibcheck-verify verify references.bib `
   --metadata-file metadata.json `
-  --depth 1 `
   --sources openalex,crossref `
   --confidence-threshold 0.85 `
   --max-requests 2000 `
   --output-dir risultati `
   --mailto nome@example.org
 ```
-
-`--depth 0` checks only the provided references. With higher values, it can follow works cited by the verified publications and build a larger graph.
 
 ## Usage with a skill
 

@@ -11,7 +11,7 @@ from bibcheck.resolve.llm import MetadataSuggestion
 
 def test_incomplete_reference_is_kept_without_requests(tmp_path):
     client = ApiClient(max_requests=1)
-    graph = verify_references([Reference("raw", title="Only title")], 1, ["openalex"], .85,
+    graph = verify_references([Reference("raw", title="Only title")], ["openalex"], .85,
                               Cache(str(tmp_path / "cache.db")), OpenAlexResolver(client), CrossrefResolver(client))
     assert graph.nodes[0].resolution.status.value == "low_confidence"
     assert client.requests == 0
@@ -20,7 +20,7 @@ def test_incomplete_reference_is_kept_without_requests(tmp_path):
 def test_request_budget_returns_partial_graph(tmp_path):
     client = ApiClient(max_requests=0)
     reference = Reference("raw", "A Paper", ["Jane Doe"], 2020)
-    graph = verify_references([reference], 1, ["openalex"], .85,
+    graph = verify_references([reference], ["openalex"], .85,
                               Cache(str(tmp_path / "cache.db")), OpenAlexResolver(client), CrossrefResolver(client))
     assert graph.partial is True
     assert graph.nodes == []
@@ -53,7 +53,7 @@ def test_llm_fallback_fills_missing_metadata_before_lookup(tmp_path):
             return Lookup("openalex", reference.query_candidates[0], Work("A Paper", ["Jane Doe"], 2020))
 
     reference = Reference("raw")
-    graph = verify_references([reference], 0, ["openalex"], .85, Cache(str(tmp_path / "cache.db")),
+    graph = verify_references([reference], ["openalex"], .85, Cache(str(tmp_path / "cache.db")),
                               StubOpenAlex(), CrossrefResolver(ApiClient(max_requests=0)), StubExtractor())
 
     assert graph.nodes[0].resolution.status.value == "verified_fuzzy"
@@ -70,7 +70,7 @@ def test_llm_extracts_metadata_for_every_reference(tmp_path):
             ]
 
     references = [Reference("first", title="Parser title", authors=["Parser"], year=1999), Reference("second")]
-    graph = verify_references(references, 0, ["openalex"], .85,
+    graph = verify_references(references, ["openalex"], .85,
                               Cache(str(tmp_path / "cache.db")),
                               OpenAlexResolver(ApiClient(max_requests=0)),
                               CrossrefResolver(ApiClient(max_requests=0)), StubExtractor())

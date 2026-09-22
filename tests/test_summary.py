@@ -32,19 +32,18 @@ def test_report_explains_results_and_uses_original_input_denominator():
     assert "10.1234/example" in report
 
 
-def test_report_shows_depth_one_and_low_confidence_reason():
+def test_report_shows_low_confidence_reason():
     reference = Reference("Raw citation", "Candidate Paper", ["Author"], 2020)
     candidate = Work("Possible Paper", ["Different Author"], 2022, source="openalex")
     graph = Graph(
         nodes=[_node("0:0", 0, VerificationStatus.LOW_CONFIDENCE, reference, 0.42, candidate),
-               _node("1:0", 1, VerificationStatus.VERIFIED_FUZZY, reference, 0.91, candidate)],
+               _node("0:1", 0, VerificationStatus.VERIFIED_FUZZY, reference, 0.91, candidate)],
         input_references=1,
     )
 
     report = markdown(graph)
 
-    assert "## Depth 0" in report
-    assert "## Depth 1" in report
+    assert "## Reference Details" in report
     assert "Candidate found, but metadata was incomplete or below the acceptance threshold." in report
     assert "0.42" in report
     assert "Possible Paper" in report

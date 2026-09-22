@@ -27,9 +27,6 @@ class OpenAlexResolver:
         except Exception as exc:
             return Lookup(self.name, query, error=str(exc))
 
-    def referenced(self, source_id: str) -> list[Work]:
-        data = self.client.get_json(f"{self.base_url}/{source_id.rsplit('/', 1)[-1]}")
-        return [_work(item) for item in data.get("referenced_works_metadata", [])]
 
 
 def _work(item: dict) -> Work:

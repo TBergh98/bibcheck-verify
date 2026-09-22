@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 
 from bibcheck.graph.traverse import Graph, Node
@@ -14,14 +14,9 @@ STATUS_LABELS = {
 
 
 def markdown(graph: Graph) -> str:
-    nodes_by_depth = defaultdict(list)
-    for node in graph.nodes:
-        nodes_by_depth[node.depth].append(node)
-
-    input_nodes = [node for node in graph.nodes if node.depth == 0]
+    input_nodes = graph.nodes
     input_total = graph.input_references or len(input_nodes)
     input_found = sum(_has_candidate(node) for node in input_nodes)
-    all_found = sum(_has_candidate(node) for node in graph.nodes)
     lines = [
         "# Bibliography Verification Report",
         "",
@@ -32,8 +27,6 @@ def markdown(graph: Graph) -> str:
         f"- **Original references:** {input_total}",
         f"- **Original references checked:** {len(input_nodes)}",
         f"- **Original references with a candidate work found:** {_ratio(input_found, input_total)}",
-        f"- **All checked nodes with a candidate work found:** {_ratio(all_found, len(graph.nodes))}",
-        f"- **Additional citation levels checked:** {max((node.depth for node in graph.nodes), default=0)}",
         f"- **Network requests:** {graph.requests}",
         f"- **Run complete:** {'No - the run stopped before checking all queued references.' if graph.partial else 'Yes'}",
         "",
@@ -81,33 +74,21 @@ def markdown(graph: Graph) -> str:
         "- Missing title, authors, or year produces `low_confidence` with confidence **0.00** and no external lookup.",
         "- If no candidate is returned, the status is `suspected_hallucination` with confidence **0.00**. This means 'not found in the consulted sources', not 'proven invented'.",
         "",
+        "## Reference Details",
+        "",
     ]
 
-    for depth in sorted(nodes_by_depth):
-        depth_nodes = nodes_by_depth[depth]
-        depth_counts = Counter(node.resolution.status.value for node in depth_nodes)
+    for status in _ordered_statuses(counts):
+        status_nodes = [node for node in graph.nodes if node.resolution.status.value == status]
         lines += [
-            f"## Depth {depth}",
+            f"### {_status_label(status)} ({len(status_nodes)})",
             "",
-            f"This section contains **{len(depth_nodes)} checked nodes**. {_ratio(sum(_has_candidate(node) for node in depth_nodes), len(depth_nodes))} have a candidate work in the consulted sources.",
-            "",
-            "| Status | Count | Share at this depth |",
-            "| --- | ---: | ---: |",
+            "| ID | Cited reference | Confidence | Candidate work | Evidence / next step |",
+            "| --- | --- | ---: | --- | --- |",
         ]
-        for status in _ordered_statuses(depth_counts):
-            lines.append(f"| {_status_label(status)} | {depth_counts[status]} | {_percent(depth_counts[status], len(depth_nodes))} |")
-        lines += ["", "### Reference Details", ""]
-        for status in _ordered_statuses(depth_counts):
-            lines += [
-                f"#### {_status_label(status)} ({depth_counts[status]})",
-                "",
-                "| ID | Cited reference | Confidence | Candidate work | Evidence / next step |",
-                "| --- | --- | ---: | --- | --- |",
-            ]
-            for node in depth_nodes:
-                if node.resolution.status.value == status:
-                    lines.append(_node_row(node))
-            lines.append("")
+        for node in status_nodes:
+            lines.append(_node_row(node))
+        lines.append("")
 
     lines += [
         "## Important Limitations",
