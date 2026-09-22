@@ -59,7 +59,7 @@ bibcheck-verify verify "C:\Temp\references.txt" --metadata-file "C:\Temp\bibchec
 ```
 
 Never use the metadata JSON as the positional input file. The verifier parses the original file only to determine the number and order of citations; the metadata fields come exclusively from the model output.
-7. Read `summary.md` and, when needed, `graph.json` from the output directory. Report low-confidence and `suspected_hallucination` entries for manual review.
+7. Read `summary.md` and, when needed, `graph.json` from the output directory. Do not copy the full contents of either file into the chat. Respond with a concise confirmation containing the output directory, the number of references checked, and the number of references requiring manual review. For `low_confidence`, `not_indexed`, or `suspected_hallucination` entries, include only their IDs and statuses unless the user explicitly asks for details. If no entries require review, state that all checked references received a verified status.
 
 Use the user's requested options when provided. Do not pass `--llm-provider` in this workflow: the current session model already performed extraction.
 
