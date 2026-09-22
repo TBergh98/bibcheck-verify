@@ -99,8 +99,28 @@ bibcheck-verify verify references.bib `
 The skill is located in [.github/skills/bibcheck-verify](.github/skills/bibcheck-verify). To install it:
 
 1. install the `bibcheck-verify` command, from the repository with `uv tool install .` or from PyPI with `uv tool install bibcheck-verify` once it is available;
-2. copy the entire `.github/skills/bibcheck-verify/` directory to the skills directory supported by your Hermes Agent or Claude Code installation;
+2. copy `SKILL.md` from `.github/skills/bibcheck-verify/` to the skills directory supported by your Hermes Agent or Claude Code installation;
 3. ask the agent to verify a PDF, Markdown, text, or BibTeX file.
+
+To download the skill without changing any provider directory, run:
+
+```powershell
+bibcheck-verify skill download
+```
+
+The command saves `bibcheck-verify-SKILL.md` in the default Downloads directory. Copy it as `SKILL.md` into the provider's skill directory. A custom destination is also supported:
+
+```powershell
+bibcheck-verify skill download --output C:\Temp\SKILL.md
+```
+
+For users who already use the Agent Skills ecosystem, the repository can also be added with:
+
+```powershell
+npx skills add TBergh98/bibcheck --skill bibcheck-verify
+```
+
+This is an optional installer managed by the external `skills` tool; it is not required by `bibcheck-verify`.
 
 The session model reads the bibliography and creates a temporary file with the title, authors, year, DOI, journal, and search query. The `bibcheck-verify` command reads the original file, applies that metadata, and queries Crossref and OpenAlex. The model proposes metadata; it does not decide whether a publication exists.
 
@@ -146,8 +166,7 @@ bibcheck-verify/
 │   └── report/                   # Markdown and JSON output
 ├── tests/                        # automated package tests
 ├── .github/skills/bibcheck-verify/ # skill for compatible agents
-│   ├── SKILL.md                  # agent operating instructions
-│   └── README.md                 # manual skill installation
+│   └── SKILL.md                  # agent operating instructions
 ├── pyproject.toml                # metadata, dependencies, and console command
 ├── uv.lock                       # locked dependency versions
 ├── .env.example                  # local LLM configuration example

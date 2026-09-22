@@ -26,5 +26,8 @@ bibcheck-verify = "bibcheck.cli:app"
 [tool.hatch.build.targets.wheel]
 packages = ["src/bibcheck"]
 
+[tool.hatch.build.targets.wheel.force-include]
+".github/skills/bibcheck-verify/SKILL.md" = "bibcheck/skill/SKILL.md"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

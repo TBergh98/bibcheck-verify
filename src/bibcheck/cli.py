@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from importlib.resources import files
 
 import typer
 from dotenv import load_dotenv
@@ -15,12 +16,39 @@ from bibcheck.resolve.openalex import OpenAlexResolver
 from bibcheck.resolve.llm import HttpMetadataExtractor, LlmConfig, LlmExtractionError, apply_suggestion, load_metadata_file
 
 app = typer.Typer(no_args_is_help=True)
+skill_app = typer.Typer(no_args_is_help=True)
+app.add_typer(skill_app, name="skill")
 load_dotenv()
 
 
 @app.command()
 def version() -> None:
     typer.echo("bibcheck-verify 0.1.0")
+
+
+@skill_app.command("download")
+def download_skill(output: Path | None = typer.Option(None, "--output", "-o"),
+                   force: bool = typer.Option(False, "--force", help="Overwrite an existing file.")) -> None:
+    """Copy the skill instructions to the user's download directory."""
+    destination = output or _download_directory() / "bibcheck-verify-SKILL.md"
+    if destination.exists() and not force:
+        raise typer.BadParameter(f"destination already exists: {destination}; use --force to overwrite")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        skill_path = files("bibcheck").joinpath("skill/SKILL.md")
+        destination.write_text(skill_path.read_text(encoding="utf-8"), encoding="utf-8")
+    except FileNotFoundError:
+        source_path = Path(__file__).parents[2] / ".github" / "skills" / "bibcheck-verify" / "SKILL.md"
+        if not source_path.is_file():
+            raise typer.BadParameter("packaged skill instructions are unavailable") from None
+        destination.write_text(source_path.read_text(encoding="utf-8"), encoding="utf-8")
+    typer.echo(f"Downloaded skill to: {destination}")
+    typer.echo("Copy this file as SKILL.md inside your provider's skill directory.")
+
+
+def _download_directory() -> Path:
+    downloads = Path.home() / "Downloads"
+    return downloads if downloads.is_dir() else Path.home()
 
 
 @app.command("verify")
