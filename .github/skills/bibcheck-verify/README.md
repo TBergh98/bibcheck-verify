@@ -12,8 +12,6 @@ The skill and the Python package are separate components.
    uv tool install bibcheck-verify
    ```
 
-   Before publishing to PyPI, use `uv tool install <repository-path>`.
-
 2. Copy the entire `bibcheck-verify` directory to the skills directory expected by your Hermes or Claude Code installation. The copied directory must contain `SKILL.md`.
 
 3. Ask the agent to verify a PDF, Markdown, text, or BibTeX file.

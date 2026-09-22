@@ -36,29 +36,9 @@ Requirements:
 - Python 3.11 o successivo;
 - [`uv`](https://docs.astral.sh/uv/).
 
-### From the repository
-
-This is the useful mode during development or before publishing to PyPI:
-
-```powershell
-uv tool install .
-```
-
-To update the installation after a local change:
-
-```powershell
-uv tool install --force .
-```
-
-Alternatively, to use the project without installing it globally:
-
-```powershell
-uv run bibcheck-verify verify references.bib
-```
-
 ### From PyPI
 
-Once the package is published, installation will not require downloading the repository:
+This is the recommended option for normal use. It installs the published package without requiring a local copy of the repository:
 
 ```powershell
 uv tool install bibcheck-verify
@@ -180,6 +160,28 @@ To prepare the repository environment:
 ```powershell
 uv sync --extra test
 uv run python -m pytest
+```
+
+### Install a local checkout
+
+These commands are intended for development and testing when working on a cloned copy of the repository. They are not needed for normal use from PyPI.
+
+To install the local checkout as a command-line tool:
+
+```powershell
+uv tool install .
+```
+
+After changing the local code, reinstall it with:
+
+```powershell
+uv tool install --force .
+```
+
+Alternatively, run the local code without installing it globally:
+
+```powershell
+uv run bibcheck-verify verify references.bib
 ```
 
 The distributable package is built with:
