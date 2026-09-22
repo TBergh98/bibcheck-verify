@@ -1,11 +1,13 @@
 from pathlib import Path
 import os
 from importlib.resources import files
+from importlib.metadata import files as distribution_files
 
 import typer
 from dotenv import load_dotenv
 
 from bibcheck.graph.cache import Cache
+from bibcheck import __version__
 from bibcheck.graph.traverse import verify_references
 from bibcheck.ingest import parse_bibtex, parse_pdf, parse_text
 from bibcheck.report.json_graph import write_json
@@ -23,7 +25,7 @@ load_dotenv()
 
 @app.command()
 def version() -> None:
-    typer.echo("bibcheck-verify 0.1.0")
+    typer.echo(f"bibcheck-verify {__version__}")
 
 
 @skill_app.command("download")
@@ -38,7 +40,11 @@ def download_skill(output: Path | None = typer.Option(None, "--output", "-o"),
         skill_path = files("bibcheck").joinpath("skill/SKILL.md")
         destination.write_text(skill_path.read_text(encoding="utf-8"), encoding="utf-8")
     except FileNotFoundError:
-        source_path = Path(__file__).parents[2] / ".github" / "skills" / "bibcheck-verify" / "SKILL.md"
+        source_path = next(
+            (file.locate() for file in distribution_files("bibcheck-verify") or []
+             if str(file).replace("\\", "/").endswith("bibcheck/skill/SKILL.md")),
+            Path(__file__).parents[2] / ".github" / "skills" / "bibcheck-verify" / "SKILL.md",
+        )
         if not source_path.is_file():
             raise typer.BadParameter("packaged skill instructions are unavailable") from None
         destination.write_text(source_path.read_text(encoding="utf-8"), encoding="utf-8")
