@@ -21,7 +21,7 @@ class Reference:
     doi_if_present: str | None = None
     venue: str = ""
     query_candidates: list[str] = field(default_factory=list)
-    metadata_source: str = "parser"
+    metadata_source: str = "unextracted"
 
     @property
     def key(self) -> str:
@@ -58,7 +58,7 @@ class Resolution:
     confidence: float = 0.0
     work: Work | None = None
     lookups: list[Lookup] = field(default_factory=list)
-    llm_fallback_used: bool = False
+    metadata_extracted_by_llm: bool = False
 
 
 def extract_doi(value: str) -> str | None:

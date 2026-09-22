@@ -57,4 +57,24 @@ def test_llm_fallback_fills_missing_metadata_before_lookup(tmp_path):
                               StubOpenAlex(), CrossrefResolver(ApiClient(max_requests=0)), StubExtractor())
 
     assert graph.nodes[0].resolution.status.value == "verified_fuzzy"
-    assert graph.nodes[0].resolution.llm_fallback_used is True
+    assert graph.nodes[0].resolution.metadata_extracted_by_llm is True
+
+
+def test_llm_extracts_metadata_for_every_reference(tmp_path):
+    class StubExtractor:
+        def extract_batch(self, references):
+            assert len(references) == 2
+            return [
+                MetadataSuggestion("0", "First Paper", ["Jane Doe"], 2020),
+                MetadataSuggestion("1", "Second Paper", ["John Doe"], 2021),
+            ]
+
+    references = [Reference("first", title="Parser title", authors=["Parser"], year=1999), Reference("second")]
+    graph = verify_references(references, 0, ["openalex"], .85,
+                              Cache(str(tmp_path / "cache.db")),
+                              OpenAlexResolver(ApiClient(max_requests=0)),
+                              CrossrefResolver(ApiClient(max_requests=0)), StubExtractor())
+
+    assert references[0].title == "First Paper"
+    assert references[1].title == "Second Paper"
+    assert all(node.resolution.metadata_extracted_by_llm for node in graph.nodes)

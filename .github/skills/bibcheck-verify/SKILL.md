@@ -5,7 +5,7 @@ description: Use when verifying a bibliography from PDF, Markdown, text, or BibT
 
 # Verify bibliography with bibcheck-verify
 
-Use the current session model to extract citation metadata, then use the installed `bibcheck-verify` command to verify those metadata against Crossref and OpenAlex.
+Use the current session model to extract citation metadata, then use the installed `bibcheck-verify` command to verify that metadata against Crossref and OpenAlex. The verifier does not perform a second local metadata extraction.
 
 The model extraction is a hypothesis. Crossref, OpenAlex and the local fuzzy match provide the verification evidence.
 
@@ -58,7 +58,7 @@ There must be exactly one item per input citation, with sequential zero-based ID
 bibcheck-verify verify "C:\Temp\references.txt" --metadata-file "C:\Temp\bibcheck-verify_metadata.json"
 ```
 
-Never use the metadata JSON as the positional input file. The verifier parses the original file to determine the number and order of references.
+Never use the metadata JSON as the positional input file. The verifier parses the original file only to determine the number and order of citations; the metadata fields come exclusively from the model output.
 7. Read `summary.md` and, when needed, `graph.json` from the output directory. Report low-confidence and `suspected_hallucination` entries for manual review.
 
 Use the user's requested options when provided. Do not pass `--llm-provider` in this workflow: the current session model already performed extraction.

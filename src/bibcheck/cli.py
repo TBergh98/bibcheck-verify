@@ -33,6 +33,10 @@ def verify(input_file: Path, depth: int = typer.Option(0, min=0), sources: str =
            metadata_file: Path | None = typer.Option(None, help="JSON metadata produced by a skill or another extractor.")) -> None:
     if not input_file.is_file():
         raise typer.BadParameter(f"input file not found: {input_file}")
+    if metadata_file and llm_provider:
+        raise typer.BadParameter("use either --metadata-file or --llm-provider, not both")
+    if not metadata_file and not llm_provider:
+        raise typer.BadParameter("provide either --metadata-file or --llm-provider")
     suffix = input_file.suffix.lower()
     references = parse_bibtex(input_file) if suffix == ".bib" else parse_pdf(input_file) if suffix == ".pdf" else parse_text(input_file)
     selected = [source.strip() for source in sources.split(",") if source.strip() in {"openalex", "crossref"}]
@@ -42,8 +46,6 @@ def verify(input_file: Path, depth: int = typer.Option(0, min=0), sources: str =
     client = ApiClient(max_requests=max_requests, mailto=mailto)
     cache = Cache(str(output_dir / "cache.sqlite3"))
     if metadata_file:
-        if llm_provider:
-            raise typer.BadParameter("use either --metadata-file or --llm-provider, not both")
         try:
             suggestions = load_metadata_file(metadata_file, len(references))
         except LlmExtractionError as exc:

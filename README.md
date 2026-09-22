@@ -8,7 +8,7 @@ It does not determine on its own that a citation is fabricated. A reference may 
 
 Real bibliographies often come from PDFs, copied text, or documents with missing DOIs and metadata. Checking them one entry at a time is slow; relying on a language model for the judgment, on the other hand, can introduce fabricated details.
 
-`bibcheck-verify` separates these two problems: extracting incomplete metadata can be assisted by a model, while the existence and matching of a work are evaluated by querying external bibliographic sources and comparing the results. This makes both interactive verification with an agent and repeated processing of many bibliographies through scripts, caching, and request limits possible.
+`bibcheck-verify` separates these two problems: a model extracts bibliographic metadata from each citation, while the existence and matching of a work are evaluated by querying external bibliographic sources and comparing the results. This makes both interactive verification with an agent and repeated processing of many bibliographies through scripts, caching, and request limits possible.
 
 ### Why this matters
 
@@ -24,7 +24,7 @@ This is the problem `bibcheck-verify` is intended to make easier to investigate 
 
 The repository contains two related but distinct components:
 
-1. **The standalone Python package**: the `bibcheck-verify` program can be used from a terminal, script, or pipeline to check many bibliographies. It can also use an LLM provider through an API key as a fallback for extracting missing metadata.
+1. **The standalone Python package**: the `bibcheck-verify` program can be used from a terminal, script, or pipeline to check many bibliographies. Metadata extraction is performed by an LLM provider or by metadata prepared by the compatible skill.
 2. **The `bibcheck-verify` skill**: instructions for Hermes Agent, Claude Code, or compatible agents. The agent uses the session model to extract metadata, without a separate LLM API key, and then delegates verification to the Python `bibcheck-verify` command.
 
 The skill does not contain a copy of the program. To use it, first install the Python package and then copy the `.github/skills/bibcheck-verify/` directory to the agent’s local skills directory.
@@ -47,7 +47,7 @@ uv tool install bibcheck-verify
 For a single temporary run:
 
 ```powershell
-uvx bibcheck-verify verify references.bib
+uvx bibcheck-verify verify references.bib --metadata-file metadata.json
 ```
 
 PyPI distributes the code and dependencies. It does not automatically receive the user’s bibliographies, reports, or API keys.
@@ -58,17 +58,19 @@ The command accepts BibTeX, PDF, Markdown, and plain text:
 
 ```powershell
 bibcheck-verify verify references.bib
-bibcheck-verify verify article.pdf
-bibcheck-verify verify references.md --output-dir risultati
+bibcheck-verify verify article.pdf --metadata-file metadata.json
+bibcheck-verify verify references.md --llm-provider openai --output-dir risultati
 ```
 
 The format is recognized from the extension:
 
-- `.bib`: title, authors, year, DOI, journal, or proceedings are extracted;
+- `.bib`: entries are separated and passed to the LLM for metadata extraction;
 - `.pdf`: text is extracted with PyMuPDF;
 - other extensions: the file is treated as text or Markdown.
 
-For text and Markdown, the parser looks for a `References`, `Bibliography`, or `Bibliografia` section. If it does not find one, it tries to interpret the entire file as a bibliography. PDF parsing is best effort; whenever possible, a BibTeX file produces more predictable results.
+For text and Markdown, the parser looks for a `References`, `Bibliography`, or `Bibliografia` section. If it does not find one, it tries to interpret the entire file as a bibliography. For PDFs, it first extracts text, locates the bibliography section, and separates its entries. The LLM is the only component that extracts bibliographic metadata.
+
+One of `--metadata-file` or `--llm-provider` is required. The metadata file must contain one LLM-produced item per citation; the HTTP provider requires its API key in the environment.
 
 To see all options:
 
@@ -81,6 +83,7 @@ Example with the main options:
 
 ```powershell
 bibcheck-verify verify references.bib `
+  --metadata-file metadata.json `
   --depth 1 `
   --sources openalex,crossref `
   --confidence-threshold 0.85 `
@@ -103,16 +106,16 @@ The session model reads the bibliography and creates a temporary file with the t
 
 This mode does not require `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY`. It does require network access to the bibliographic sources, and the `bibcheck-verify` command must be available in the agent’s PATH.
 
-## API keys and LLM fallback
+## LLM metadata extraction
 
-Standalone usage can ask the program to extract incomplete metadata through an LLM provider. This is an optional fallback and does not replace verification against Crossref/OpenAlex.
+Standalone usage uses an LLM to extract metadata for every citation. This extraction does not replace verification against Crossref/OpenAlex.
 
 ```powershell
 $env:OPENAI_API_KEY = "..."
 bibcheck-verify verify references.md --llm-provider openai
 ```
 
-The `openai`, `anthropic`, and `gemini` providers are supported. Keys must remain in environment variables or a local `.env` file, never in the repository, reports, or metadata JSON file.
+The `openai`, `anthropic`, and `gemini` providers are supported. Keys must remain in environment variables or a local `.env` file, never in the repository, reports, or metadata JSON file. Alternatively, use `--metadata-file` with JSON produced by the compatible skill, which uses the session model and does not require a provider API key.
 
 ## Results
 
@@ -138,7 +141,7 @@ bibcheck-verify/
 ├── src/bibcheck/                 # Internal Python module for the bibcheck-verify command
 │   ├── cli.py                    # `bibcheck-verify` commands and options
 │   ├── ingest/                   # BibTeX, PDF, and text parsers
-│   ├── resolve/                  # Crossref, OpenAlex, fuzzy matching, and optional LLM
+│   ├── resolve/                  # LLM metadata extraction, Crossref, OpenAlex, and fuzzy matching
 │   ├── graph/                    # citation graph cache and traversal
 │   └── report/                   # Markdown and JSON output
 ├── tests/                        # automated package tests

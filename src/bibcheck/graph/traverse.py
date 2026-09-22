@@ -77,7 +77,7 @@ def _resolve(reference: Reference, sources: list[str], threshold: float, openale
         lookups.append(lookup)
         if lookup.exact_doi and lookup.matched:
             return Resolution(reference, VerificationStatus.VERIFIED, 1.0, lookup.matched, lookups,
-                              reference.metadata_source == "llm")
+                              reference.metadata_source in {"llm", "skill"})
     if not reference.title or not reference.authors or reference.year is None:
         return Resolution(reference, VerificationStatus.LOW_CONFIDENCE, lookups=lookups)
     for source in sources:
@@ -88,26 +88,23 @@ def _resolve(reference: Reference, sources: list[str], threshold: float, openale
             lookup.confidence = match.score
             if match.accepted:
                 return Resolution(reference, VerificationStatus.VERIFIED_FUZZY, match.score, lookup.matched, lookups,
-                                  reference.metadata_source == "llm")
+                                  reference.metadata_source in {"llm", "skill"})
     if any(lookup.matched for lookup in lookups):
         return Resolution(reference, VerificationStatus.LOW_CONFIDENCE, max(item.confidence for item in lookups), lookups[-1].matched, lookups,
-                          reference.metadata_source == "llm")
+                          reference.metadata_source in {"llm", "skill"})
     return Resolution(reference, VerificationStatus.SUSPECTED_HALLUCINATION, 0.0, None, lookups,
-                      reference.metadata_source == "llm")
+                      reference.metadata_source in {"llm", "skill"})
 
 
 def _extract_missing_metadata(references: list[Reference], extractor: MetadataExtractor | None) -> None:
     if extractor is None:
         return
-    pending = [reference for reference in references if not reference.doi_if_present and
-               (not reference.title or not reference.authors or reference.year is None)]
-    if not pending:
+    if not references:
         return
-    try:
-        suggestions = extractor.extract_batch(pending)
-    except (LlmExtractionError, RuntimeError):
-        return
-    for reference, suggestion in zip(pending, suggestions):
+    suggestions = extractor.extract_batch(references)
+    if len(suggestions) != len(references):
+        raise LlmExtractionError("metadata extractor returned an incomplete result")
+    for reference, suggestion in zip(references, suggestions):
         apply_suggestion(reference, suggestion)
 
 
@@ -121,5 +118,5 @@ def graph_to_dict(graph: Graph) -> dict:
                        "status": node.resolution.status.value, "confidence": node.resolution.confidence,
                        "work": asdict(node.resolution.work) if node.resolution.work else None,
                        "lookups": [asdict(item) for item in node.resolution.lookups],
-                       "llm_fallback_used": node.resolution.llm_fallback_used} for node in graph.nodes],
+                       "metadata_extracted_by_llm": node.resolution.metadata_extracted_by_llm} for node in graph.nodes],
             "edges": [asdict(edge) for edge in graph.edges]}

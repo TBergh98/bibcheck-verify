@@ -23,7 +23,8 @@ class Cache:
             matched_data = item.pop("matched", None)
             matched = Work(**matched_data) if matched_data else None
             lookups.append(Lookup(**item, matched=matched))
-        return Resolution(Reference(**data["reference"]), VerificationStatus(data["status"]), data["confidence"], work, lookups, data["llm_fallback_used"])
+        extracted_by_llm = data.get("metadata_extracted_by_llm", data.get("llm_fallback_used", False))
+        return Resolution(Reference(**data["reference"]), VerificationStatus(data["status"]), data["confidence"], work, lookups, extracted_by_llm)
 
     def put(self, key: str, resolution: Resolution) -> None:
         data = asdict(resolution)

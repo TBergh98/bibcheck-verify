@@ -28,26 +28,11 @@ class LlmExtractionError(RuntimeError):
 
 
 def apply_suggestion(reference: Reference, suggestion: MetadataSuggestion, source: str = "llm") -> None:
-    if source == "skill" and suggestion.title:
-        reference.title = suggestion.title
-    elif not reference.title:
-        reference.title = suggestion.title
-    if source == "skill" and suggestion.authors:
-        reference.authors = suggestion.authors
-    elif not reference.authors:
-        reference.authors = suggestion.authors
-    if source == "skill" and suggestion.year is not None:
-        reference.year = suggestion.year
-    elif reference.year is None:
-        reference.year = suggestion.year
-    if source == "skill" and suggestion.doi:
-        reference.doi_if_present = suggestion.doi
-    elif not reference.doi_if_present:
-        reference.doi_if_present = suggestion.doi
-    if source == "skill" and suggestion.venue:
-        reference.venue = suggestion.venue
-    elif not reference.venue:
-        reference.venue = suggestion.venue
+    reference.title = suggestion.title
+    reference.authors = suggestion.authors
+    reference.year = suggestion.year
+    reference.doi_if_present = suggestion.doi
+    reference.venue = suggestion.venue
     reference.query_candidates = list(dict.fromkeys(suggestion.queries))
     reference.metadata_source = source
 

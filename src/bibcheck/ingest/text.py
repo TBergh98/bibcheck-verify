@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-from bibcheck.resolve.base import Reference, extract_doi
+from bibcheck.resolve.base import Reference
 
 
 def parse_text(path_or_text: str | Path) -> list[Reference]:
@@ -10,7 +10,7 @@ def parse_text(path_or_text: str | Path) -> list[Reference]:
     entries = _split_entries(section)
     if not entries and section.strip():
         entries = [line.strip() for line in section.splitlines() if line.strip()]
-    return [_parse_entry(entry) for entry in entries]
+    return [Reference(raw_text=entry) for entry in entries]
 
 
 def _bibliography_section(text: str) -> str:
@@ -53,7 +53,7 @@ def _split_entries(section: str) -> list[str]:
                 )
             )
         )
-        if current and (starts_reference and extract_doi(current_text) or starts_numbered_reference):
+        if current and (starts_reference and _contains_doi_marker(current_text) or starts_numbered_reference):
             entries.append(current_text.strip())
             current = []
         if line.strip():
@@ -63,17 +63,7 @@ def _split_entries(section: str) -> list[str]:
     return entries
 
 
-def _parse_entry(raw: str) -> Reference:
-    year_match = re.search(r"\b(19|20)\d{2}\b", raw)
-    title_match = re.search(r"[\"“](.+?)[\"”]", raw)
-    title = title_match.group(1) if title_match else _title_from_entry(raw)
-    author_part = raw[:title_match.start()] if title_match else raw.split(".", 1)[0]
-    authors = [part.strip() for part in re.split(r",|\band\b", author_part, flags=re.I) if len(part.strip()) > 1]
-    return Reference(raw_text=raw, title=title.strip(" ."), authors=authors,
-                     year=int(year_match.group(0)) if year_match else None,
-                     doi_if_present=extract_doi(raw))
+def _contains_doi_marker(text: str) -> bool:
+    return bool(re.search(r"\b10\.\d{4,9}/", text, re.I))
 
 
-def _title_from_entry(raw: str) -> str:
-    parts = [part.strip() for part in raw.split(".") if part.strip()]
-    return parts[1] if len(parts) > 1 else (parts[0] if parts else "")
