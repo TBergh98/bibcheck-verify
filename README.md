@@ -194,23 +194,3 @@ uv build
 ```
 
 Artifacts are created in `dist/`. Before publishing to PyPI, it is advisable to check the wheel contents and test it in a clean environment or on TestPyPI.
-
-## Publishing to PyPI
-
-Publishing is optional and is not required to use the project locally. In summary:
-
-1. create an account on PyPI and, preferably, a project-scoped token;
-2. run `uv build`;
-3. check the artifacts in `dist/`;
-4. upload to TestPyPI first;
-5. upload to PyPI using the token, without saving it in versioned files.
-
-The `bibcheck-verify` distribution name must be available on PyPI. The installed package provides the `bibcheck-verify` command. The actual upload requires the owner’s credentials and is not performed by this repository.
-
-## Limitations
-
-- verification requires network access;
-- Crossref and OpenAlex may have incomplete or differing data;
-- the request limit may produce a partial result;
-- the cache may reuse previous resolutions;
-- no result replaces review of the original bibliography.
