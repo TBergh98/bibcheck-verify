@@ -1,22 +1,26 @@
-# bibcheck-verify
+# bibcheck-verify: scientific bibliography verification
 
-`bibcheck-verify` is a tool for an initial reproducible check of scientific bibliographies. It compares each reference with metadata indexed by Crossref and OpenAlex and produces a report that helps identify strong matches, possible matches, and references that require manual review.
+`bibcheck-verify` is a reproducible scientific bibliography verification tool for papers, manuscripts, and peer review. It compares each reference with metadata indexed by Crossref and OpenAlex and produces an evidence-based report that helps identify strong matches, possible matches, and references that require manual review.
 
 It does not determine on its own that a citation is fabricated. A reference may be correct but not indexed, or it may be written too incompletely to be recognized. The results are therefore a triage tool, not definitive proof.
 
 ## Why it exists
 
-Real bibliographies often come from PDFs, copied text, or documents with missing DOIs and metadata. Checking them one entry at a time is slow; relying on a language model for the judgment, on the other hand, can introduce fabricated details.
+Real bibliographies often come from PDFs, copied text, or documents with missing DOIs and metadata. Checking them one entry at a time is slow; relying on a language model for the judgment, on the other hand, can introduce fabricated details. **This is especially useful for scientific peer reviewers who need an initial check before spending time on a deeper review of a manuscript.**
 
 `bibcheck-verify` separates these two problems: a model extracts bibliographic metadata from each citation, while the existence and matching of a work are evaluated by querying external bibliographic sources and comparing the results. This makes both interactive verification with an agent and repeated processing of many bibliographies through scripts, caching, and request limits possible.
 
+### For scientific peer reviewers
+
+When reviewing a paper, use `bibcheck-verify` to check whether the cited works can be found in major bibliographic indexes and whether the citation metadata is consistent with those records. The resulting triage report can help reviewers decide whether the bibliography appears sufficiently reliable to proceed to a more detailed scientific review, or whether specific references need closer manual examination first. It supports editorial and peer-review workflows; it does not replace the reviewer's judgment about the paper or its sources.
+
 ### Why this matters
 
-The scale of the problem is illustrated by a 2026 audit published in [The Lancet](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(26)00603-3/fulltext). The audit examined 2,471,758 biomedical papers published between January 1, 2023, and February 18, 2026, containing 125,615,773 structured references. Of these references, 97.1 million (77%) carried a PMID and were checked against bibliographic records; references to websites, books, and other grey literature were mostly excluded.
+The scale of the problem is illustrated by a 2026 audit published in [The Lancet](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(26)00603-3/fulltext). The audit examined more than 2.4 million biomedical papers published between January 2023 and February 2026, covering more than 125 million structured references.
 
-The authors identified 4,046 fabricated references across 2,810 papers. The reported rate increased from approximately one paper in 2,828 in 2023 to one in 458 in 2025, and one in 277 during the first seven weeks of 2026. The fabrication rate rose from about 4 per 10,000 papers in 2023 to 51.3 per 10,000 papers in the fourth quarter of 2025, reaching 56.9 per 10,000 papers in early 2026.
+The authors identified 4,046 fabricated references across 2,810 papers. The reported rate increased substantially over the period studied: from approximately one affected paper in 2,828 in 2023 to one in 458 in 2025, and one in 277 during the first seven weeks of 2026.
 
-Their system compared claimed reference metadata with records from PubMed and Crossref, then used automated filters, an LLM review step, and additional checks against OpenAlex and Google Scholar. In a masked validation of 500 entries, the system had a reported precision of 91% (Fleiss’ κ = 0.71); the authors explicitly note that this estimates precision, not recall. The study also distinguishes fabricated references from reference errors, such as abbreviated titles that still correspond to a real publication.
+The study compared claimed reference metadata with records from PubMed and Crossref, then applied automated filters, an LLM review step, and additional checks against OpenAlex and Google Scholar. It also distinguishes fabricated references from ordinary citation errors, such as abbreviated titles that still correspond to a real publication.
 
 This is the problem `bibcheck-verify` is intended to make easier to investigate at a smaller and inspectable scale: verify references against external records, preserve the queries and evidence, and send uncertain cases to human review. Its results should not be interpreted as a replication of the Lancet audit or as definitive proof that an unmatched reference is fabricated.
 
@@ -33,7 +37,7 @@ The skill does not contain a copy of the program. To use it, first install the P
 
 Requirements:
 
-- Python 3.11 o successivo;
+- Python 3.11 or newer;
 - [`uv`](https://docs.astral.sh/uv/).
 
 ### From PyPI
