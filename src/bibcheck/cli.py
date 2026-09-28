@@ -3,6 +3,7 @@ import os
 from importlib.resources import files
 from importlib.metadata import files as distribution_files
 
+import httpx
 import typer
 from dotenv import load_dotenv
 
@@ -76,6 +77,7 @@ def verify(input_file: Path, sources: str = typer.Option("openalex,crossref"),
     selected = [source.strip() for source in sources.split(",") if source.strip() in {"openalex", "crossref"}]
     if not selected:
         raise typer.BadParameter("sources must contain openalex or crossref")
+    _check_sources_reachable(selected)
     output_dir.mkdir(parents=True, exist_ok=True)
     client = ApiClient(max_requests=max_requests, mailto=mailto)
     cache = Cache(str(output_dir / "cache.sqlite3"))
@@ -92,6 +94,32 @@ def verify(input_file: Path, sources: str = typer.Option("openalex,crossref"),
     write_json(graph, output_dir / "graph.json")
     write_summary(graph, output_dir / "summary.md")
     typer.echo(f"Verified {len(references)} references; wrote {output_dir}")
+
+
+_SOURCE_PROBES = {
+    "openalex": "https://api.openalex.org/works?per-page=1",
+    "crossref": "https://api.crossref.org/works?rows=0",
+}
+
+
+def _check_sources_reachable(sources: list[str]) -> None:
+    """Stop before verifying when a bibliographic source cannot be reached.
+
+    Without this check, blocked network access (for example a sandbox proxy) would make every
+    reference look like a suspected hallucination, and those results would be cached.
+    """
+    failures = []
+    for source in sources:
+        try:
+            httpx.get(_SOURCE_PROBES[source], timeout=15.0).raise_for_status()
+        except httpx.HTTPError as exc:
+            failures.append(f"{source}: {exc}")
+    if failures:
+        typer.echo("Cannot reach the bibliographic sources, so no references were verified:", err=True)
+        for failure in failures:
+            typer.echo(f"  - {failure}", err=True)
+        typer.echo("Allow HTTPS access to api.openalex.org and api.crossref.org, then run the command again.", err=True)
+        raise typer.Exit(code=2)
 
 
 def _llm_extractor(provider: str | None, model: str | None) -> HttpMetadataExtractor | None:

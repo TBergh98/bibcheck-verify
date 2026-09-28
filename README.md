@@ -28,10 +28,46 @@ This is the problem `bibcheck-verify` is intended to make easier to investigate 
 
 The repository contains two related but distinct components:
 
-1. **The standalone Python package**: the `bibcheck-verify` program can be used from a terminal, script, or pipeline to check many bibliographies. Metadata extraction is performed by an LLM provider or by metadata prepared by the compatible skill.
-2. **The `bibcheck-verify` skill**: instructions for Hermes Agent, Claude Code, or compatible agents. The agent uses the session model to extract metadata, without a separate LLM API key, and then delegates verification to the Python `bibcheck-verify` command.
+1. **The `bibcheck-verify` skill for Claude and other agents** (recommended for most users): the agent uses its own session model to extract metadata, without a separate LLM API key, and then delegates verification to the Python `bibcheck-verify` command. In Claude it is installed as a plugin in a few clicks, and it fetches the Python command from PyPI by itself when needed.
+2. **The standalone Python package**: the `bibcheck-verify` program can be used from a terminal, script, or pipeline to check many bibliographies. Metadata extraction is performed by an LLM provider or by metadata prepared by the compatible skill.
 
-The skill does not contain a copy of the program. To use it, first install the Python package and then copy the `.github/skills/bibcheck-verify/` directory to the agent’s local skills directory.
+## Quick start: use it in Claude
+
+This repository is also a Claude plugin marketplace. Installing the plugin adds the `bibcheck-verify` skill; there is nothing to copy by hand and no separate Python installation to do first.
+
+### Claude desktop app and claude.ai (Cowork and chat)
+
+Plugins require a paid Claude plan (Pro, Max, Team or Enterprise).
+
+1. Open **Customize** in the sidebar and select **Plugins**.
+2. Select **Add marketplace** and enter `TBergh98/bibcheck-verify` (or `https://github.com/TBergh98/bibcheck-verify`).
+3. Find **bibcheck-verify** in the list and select **Install**.
+4. **Allow the bibliographic sources.** When Claude runs code in a cloud sandbox, it can reach only allowed domains. Add `api.crossref.org` and `api.openalex.org` to the domains allowed for code execution in Claude's network settings (on Team and Enterprise plans an Owner manages this in the admin settings). Without this step the verifier stops with the message "Cannot reach the bibliographic sources"; it never reports references as fabricated because of a blocked network.
+5. Attach a paper or a bibliography and ask, for example: *"Verify the bibliography of this PDF"*.
+
+To receive new versions, select **Check for updates** on the marketplace, or turn on **Sync automatically**.
+
+### Claude Code
+
+In a Claude Code session:
+
+```text
+/plugin marketplace add TBergh98/bibcheck-verify
+/plugin install bibcheck-verify@bibcheck-verify
+```
+
+Or from a terminal:
+
+```powershell
+claude plugin marketplace add TBergh98/bibcheck-verify
+claude plugin install bibcheck-verify@bibcheck-verify
+```
+
+Then ask Claude to verify a PDF, Markdown, text, or BibTeX file, or invoke the skill directly with `/bibcheck-verify:bibcheck-verify`. Third-party marketplaces do not update automatically by default: run `/plugin marketplace update bibcheck-verify`, or enable auto-update for it in the **Marketplaces** tab of `/plugin`.
+
+### What happens behind the scenes
+
+The skill first looks for the verifier and, if it is missing, gets it from PyPI on its own: it uses an installed `bibcheck-verify` command if there is one, otherwise `uvx bibcheck-verify`, otherwise `pip install bibcheck-verify`. The only requirement is Python 3.11+ (or [`uv`](https://docs.astral.sh/uv/)) where Claude runs commands; Claude's cloud sandbox already has it. If you use Claude Code on your own computer and prefer a permanent installation, run `uv tool install bibcheck-verify` once.
 
 ## Package installation
 
@@ -107,37 +143,38 @@ bibcheck-verify verify references.bib `
   --mailto nome@example.org
 ```
 
-## Usage with a skill
+## Usage with other agents
 
-The skill is located in [.github/skills/bibcheck-verify](.github/skills/bibcheck-verify). To install it:
+For Claude, use the plugin described in [Quick start](#quick-start-use-it-in-claude). For Hermes Agent and other agents that read `SKILL.md` files, install the skill manually. It is located in [.github/skills/bibcheck-verify](.github/skills/bibcheck-verify).
 
-1. install the `bibcheck-verify` command, from the repository with `uv tool install .` or from PyPI with `uv tool install bibcheck-verify` once it is available;
-2. copy `SKILL.md` from `.github/skills/bibcheck-verify/` to the skills directory supported by your Hermes Agent or Claude Code installation;
-3. ask the agent to verify a PDF, Markdown, text, or BibTeX file.
+With the external [`skills`](https://www.npmjs.com/package/skills) installer, if you already use it:
 
-To download the skill without changing any provider directory, run:
+```powershell
+npx skills add TBergh98/bibcheck-verify --skill bibcheck-verify
+```
+
+Or copy the file by hand:
+
+1. copy `.github/skills/bibcheck-verify/SKILL.md` into the skills directory supported by your agent (as `bibcheck-verify/SKILL.md`);
+2. ask the agent to verify a PDF, Markdown, text, or BibTeX file.
+
+If you already installed the Python package, it can also save a copy of the skill without changing any agent directory:
 
 ```powershell
 bibcheck-verify skill download
 ```
 
-The command saves `bibcheck-verify-SKILL.md` in the default Downloads directory. Copy it as `SKILL.md` into the provider's skill directory. A custom destination is also supported:
+The command saves `bibcheck-verify-SKILL.md` in the default Downloads directory. Copy it as `SKILL.md` into the agent's skill directory. A custom destination is also supported:
 
 ```powershell
 bibcheck-verify skill download --output C:\Temp\SKILL.md
 ```
 
-For users who already use the Agent Skills ecosystem, the repository can also be added with:
-
-```powershell
-npx skills add TBergh98/bibcheck --skill bibcheck-verify
-```
-
-This is an optional installer managed by the external `skills` tool; it is not required by `bibcheck-verify`.
+### How the skill works
 
 The session model reads the bibliography and creates a temporary file with the title, authors, year, DOI, journal, and search query. The `bibcheck-verify` command reads the original file, applies that metadata, and queries Crossref and OpenAlex. The model proposes metadata; it does not decide whether a publication exists.
 
-This mode does not require `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY`. It does require network access to the bibliographic sources, and the `bibcheck-verify` command must be available in the agent’s PATH.
+This mode does not require `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY`. It does require HTTPS access to `api.crossref.org` and `api.openalex.org`; the command checks both before starting and stops with an explicit error if they cannot be reached.
 
 ## LLM metadata extraction
 
@@ -163,6 +200,7 @@ The main statuses are:
 - `verified`: verified match, including through an exact DOI;
 - `verified_fuzzy`: match accepted by fuzzy comparison;
 - `low_confidence`: possible match that is not sufficiently strong;
+- `not_indexed`: no result available in the relevant indexes;
 - `suspected_hallucination`: no match found in the consulted sources.
 
 `suspected_hallucination` is a triage label, not proof that the reference is fabricated. All uncertain cases require human review.
@@ -178,8 +216,11 @@ bibcheck-verify/
 │   ├── graph/                    # citation graph cache and traversal
 │   └── report/                   # Markdown and JSON output
 ├── tests/                        # automated package tests
-├── .github/skills/bibcheck-verify/ # skill for compatible agents
+├── .github/skills/bibcheck-verify/ # skill for Claude and compatible agents
 │   └── SKILL.md                  # agent operating instructions
+├── .claude-plugin/               # Claude plugin and marketplace manifests
+│   ├── plugin.json
+│   └── marketplace.json
 ├── pyproject.toml                # metadata, dependencies, and console command
 ├── uv.lock                       # locked dependency versions
 ├── .env.example                  # local LLM configuration example

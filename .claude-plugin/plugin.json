@@ -1,0 +1,13 @@
+{
+  "name": "bibcheck-verify",
+  "displayName": "bibcheck-verify",
+  "description": "Verify a scientific bibliography (PDF, Markdown, text or BibTeX) against Crossref and OpenAlex and flag references that need manual review.",
+  "author": {
+    "name": "Tommaso Bergamasco",
+    "url": "https://github.com/TBergh98"
+  },
+  "homepage": "https://github.com/TBergh98/bibcheck-verify",
+  "repository": "https://github.com/TBergh98/bibcheck-verify",
+  "license": "MIT",
+  "keywords": ["bibliography", "citations", "peer-review", "crossref", "openalex"]
+}

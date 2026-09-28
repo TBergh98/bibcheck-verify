@@ -1,0 +1,15 @@
+{
+  "name": "bibcheck-verify",
+  "description": "Plugin marketplace for bibcheck-verify",
+  "owner": {
+    "name": "Tommaso Bergamasco",
+    "url": "https://github.com/TBergh98"
+  },
+  "plugins": [
+    {
+      "name": "bibcheck-verify",
+      "source": "./",
+      "description": "Verify a scientific bibliography against Crossref and OpenAlex and flag references that need manual review."
+    }
+  ]
+}
